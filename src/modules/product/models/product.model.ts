@@ -1,3 +1,13 @@
+export interface CategoryRef {
+  _id: string;
+  name: string;
+  slug: string;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  fullPath?: string;
+  id?: string;
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -5,7 +15,7 @@ export interface Product {
   description: string;
   price: number;
   images: string[];
-  category: string;
+  category: string | CategoryRef;
   variants: {
     _id: string;
     size?: string;

@@ -18,7 +18,9 @@ export function ProductCard({ product }: { product: Product }) {
           />
         </div>
         <CardContent className="p-4">
-          <Badge variant="secondary" className="mb-2">{product.category}</Badge>
+          <Badge variant="secondary" className="mb-2">
+            {typeof product.category === 'string' ? product.category : product.category.name}
+          </Badge>
           <h3 className="font-semibold truncate">{product.name}</h3>
           <p className="text-lg font-bold text-primary mt-1">{formatPrice(product.price)}</p>
         </CardContent>
