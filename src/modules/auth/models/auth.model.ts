@@ -2,13 +2,15 @@ import { z } from 'zod';
 
 export const loginSchema = z.object({
   email: z.string().email('Invalid email'),
-  password: z.string().min(8, 'Minimum 8 characters'),
+  password: z.string().min(6, 'Minimum 6 characters'),
 });
 
 export const registerSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
+  firstName: z.string().min(1, 'First name required'),
+  lastName: z.string().min(1, 'Last name required'),
+  email: z.string().email('Invalid email'),
+  password: z.string().min(6, 'Minimum 6 characters'),
+  phone: z.string().optional(),
 });
 
 export type LoginForm = z.infer<typeof loginSchema>;

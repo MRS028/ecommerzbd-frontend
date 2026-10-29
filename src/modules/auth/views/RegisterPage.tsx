@@ -10,13 +10,15 @@ import { registerSchema, RegisterForm } from '../models/auth.model';
 
 export default function RegisterPage() {
   const { register: registerUser, loading, error } = useRegister();
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema),
-  });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterForm>({ resolver: zodResolver(registerSchema) });
 
   return (
     <>
-      <SEO title="Register" description="Create your Spark Collection account" canonical="/register" />
+      <SEO title="Register" canonical="/register" />
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <Card className="w-full max-w-md">
           <CardHeader>
@@ -24,17 +26,34 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(registerUser)} className="space-y-4">
-              <div>
-                <Input placeholder="Full Name" {...register('name')} />
-                {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Input placeholder="First Name" {...register('firstName')} />
+                  {errors.firstName && (
+                    <p className="text-sm text-destructive mt-1">{errors.firstName.message}</p>
+                  )}
+                </div>
+                <div>
+                  <Input placeholder="Last Name" {...register('lastName')} />
+                  {errors.lastName && (
+                    <p className="text-sm text-destructive mt-1">{errors.lastName.message}</p>
+                  )}
+                </div>
               </div>
               <div>
                 <Input placeholder="Email" {...register('email')} />
-                {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
+                {errors.email && (
+                  <p className="text-sm text-destructive mt-1">{errors.email.message}</p>
+                )}
               </div>
               <div>
                 <Input type="password" placeholder="Password" {...register('password')} />
-                {errors.password && <p className="text-sm text-destructive mt-1">{errors.password.message}</p>}
+                {errors.password && (
+                  <p className="text-sm text-destructive mt-1">{errors.password.message}</p>
+                )}
+              </div>
+              <div>
+                <Input placeholder="Phone (optional)" {...register('phone')} />
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={loading}>
@@ -42,7 +61,8 @@ export default function RegisterPage() {
               </Button>
             </form>
             <p className="text-sm text-center mt-4 text-muted-foreground">
-              Have an account? <Link to="/login" className="text-primary hover:underline">Sign In</Link>
+              Have an account?{' '}
+              <Link to="/login" className="text-primary hover:underline">Sign In</Link>
             </p>
           </CardContent>
         </Card>

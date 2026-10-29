@@ -1,13 +1,29 @@
 export interface User {
   _id: string;
-  name: string;
   email: string;
+  firstName: string;
+  lastName: string;
+  name?: string;
+  phone?: string;
+  avatar?: string;
   role: 'SUPER_ADMIN' | 'ADMIN' | 'CUSTOMER';
-  status: string;
+  status: 'active' | 'inactive' | 'blocked' | 'pending_verification';
+  emailVerified?: boolean;
+  isDeleted?: boolean;
+  createdAt?: string;
+}
+
+export interface CategoryRef {
+  _id: string;
+  name: string;
+  slug: string;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  fullPath?: string;
 }
 
 export interface Variant {
-  _id: string;
+  _id?: string;
   size?: string;
   color?: string;
   price: number;
@@ -21,14 +37,16 @@ export interface Product {
   slug: string;
   description: string;
   price: number;
+  stock?: number;
   images: string[];
-  category: string;
-  variants: Variant[];
+  category: string | CategoryRef;
+  variants?: Variant[];
+  featured?: boolean;
 }
 
 export interface CartItem {
   productId: string;
-  variantId: string;
+  variantId?: string;
   name: string;
   image: string;
   price: number;
@@ -37,8 +55,10 @@ export interface CartItem {
 
 export interface Order {
   _id: string;
-  items: CartItem[];
+  user?: User | string;
+  items: any[];
   total: number;
-  status: string;
+  status: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   createdAt: string;
+  shippingAddress?: any;
 }

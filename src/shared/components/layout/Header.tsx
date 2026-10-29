@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { ShoppingCart, User } from 'lucide-react';
+import { ShoppingCart, User, Shield } from 'lucide-react';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { Button } from '@/shared/components/ui/button';
 import { useCartStore } from '@/modules/cart/store/cart.store';
@@ -10,6 +10,8 @@ import { cn } from '@/shared/lib/utils';
 export function Header() {
   const count = useCartStore((s) => s.count());
   const { isAuthenticated, user, logout } = useAuthStore();
+
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     cn('text-sm font-medium transition-colors hover:text-primary',
@@ -23,6 +25,13 @@ export function Header() {
           <NavLink to={ROUTES.HOME} className={navLinkClass} end>Home</NavLink>
           <NavLink to={ROUTES.PRODUCTS} className={navLinkClass}>Products</NavLink>
           {isAuthenticated && <NavLink to={ROUTES.ORDERS} className={navLinkClass}>Orders</NavLink>}
+          {isAdmin && (
+            <NavLink to="/admin" className={navLinkClass}>
+              <span className="inline-flex items-center gap-1">
+                <Shield className="h-3 w-3" /> Admin
+              </span>
+            </NavLink>
+          )}
         </nav>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -37,7 +46,7 @@ export function Header() {
             </Button>
           </Link>
           {isAuthenticated ? (
-            <Button variant="ghost" size="sm" onClick={() => { logout(); }}>
+            <Button variant="ghost" size="sm" onClick={() => logout()}>
               <User className="h-4 w-4 mr-1" /> {user?.name?.split(' ')[0] ?? 'Logout'}
             </Button>
           ) : (
