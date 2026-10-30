@@ -12,7 +12,6 @@ import { ROUTES } from '@/shared/lib/constants';
 import { Product } from '../../models/product.model';
 
 export function ProductCard({ product }: { product: Product }) {
-  // ✅ সব safe helper দিয়ে — null crash হবে না
   const name = getProductName(product);
   const price = getProductPrice(product);
   const image = getProductImage(product);

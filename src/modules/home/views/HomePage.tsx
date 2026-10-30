@@ -15,7 +15,7 @@ export default function HomePage() {
         description="Discover curated fashion from Spark Collection. Shop the latest trends with fast delivery."
         canonical="/"
       />
-      <section className="relative py-24 px-4 text-center bg-gradient-to-b from-primary/10 to-transparent">
+      <section className="relative py-24 px-4 text-center bg-linear-to-b from-primary/10 to-transparent">
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
           Welcome to <span className="text-primary">{APP_NAME}</span>
         </h1>

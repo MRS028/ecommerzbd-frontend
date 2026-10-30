@@ -1,166 +1,233 @@
-import { useState } from 'react';
-import { SEO } from '@/shared/components/common/SEO';
-import { Input } from '@/shared/components/ui/input';
-import { Button } from '@/shared/components/ui/button';
-import { Skeleton } from '@/shared/components/ui/skeleton';
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/shared/components/ui/select';
-import { Ban, Trash2, Shield } from 'lucide-react';
-import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { AlertModal } from '@/shared/components/common/AlertModal';
-import { useAlert } from '@/shared/hooks/useAlert';
-import { useAdminUsers } from '../controllers/useAdminUsers';
-import { getUserDisplayName, getUserEmail } from '@/shared/lib/user-helpers';
-import { useAuthStore } from '@/modules/auth/store/auth.store';
-import { toast } from 'sonner';
-
-const ROLES = ['CUSTOMER', 'ADMIN', 'SUPER_ADMIN'];
-const STATUSES = ['active', 'inactive', 'blocked', 'pending_verification'];
+  useUsers,
+  useUserStatistics,
+  useBanUser,
+  useDeleteUser,
+} from "@/modules/user/controllers/useUsers";
+import {
+  UserListQuery,
+  Role,
+  UserStatus,
+} from "@/modules/user/types/user.types";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/components/ui/table";
+import { Badge } from "@/shared/components/ui/badge";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 
 export default function AdminUsersPage() {
-  const [search, setSearch] = useState('');
-  const { items, loading, setRole, setStatus, ban, remove } = useAdminUsers(search);
-  const [confirmBan, setConfirmBan] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [processing, setProcessing] = useState(false);
-  const { alert, show, hide } = useAlert();
-  const currentUser = useAuthStore((s) => s.user);
-  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
-
-  const handleBan = async () => {
-    if (!confirmBan) return;
-    setProcessing(true);
-    try {
-      await ban(confirmBan);
-      toast.success('User banned');
-    } catch (e: any) {
-      show({ variant: 'error', title: 'Failed to ban user', description: e?.response?.data?.message || 'Unknown error' });
-    } finally {
-      setProcessing(false);
-      setConfirmBan(null);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!confirmDelete) return;
-    setProcessing(true);
-    try {
-      await remove(confirmDelete);
-      toast.success('User deleted');
-    } catch (e: any) {
-      show({ variant: 'error', title: 'Failed to delete user', description: e?.response?.data?.message || 'Unknown error' });
-    } finally {
-      setProcessing(false);
-      setConfirmDelete(null);
-    }
-  };
+  const [query, setQuery] = useState<UserListQuery>({ page: 1, limit: 10 });
+  const { data, isLoading } = useUsers(query);
+  const { data: stats } = useUserStatistics();
+  const banUser = useBanUser();
+  const deleteUser = useDeleteUser();
 
   return (
-    <>
-      <SEO title="Manage Users" />
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Users</h2>
-
-        <Input
-          placeholder="Search by name or email"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-
-        {loading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        ) : !Array.isArray(items) || items.length === 0 ? (
-          <p className="text-muted-foreground py-8 text-center">No users found.</p>
-        ) : (
-          <div className="border rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="text-left p-3">Name</th>
-                  <th className="text-left p-3">Email</th>
-                  <th className="text-left p-3">Role</th>
-                  <th className="text-left p-3">Status</th>
-                  <th className="text-right p-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((u) => (
-                  <tr key={u._id} className="border-t">
-                    <td className="p-3">{getUserDisplayName(u)}</td>
-                    <td className="p-3">{getUserEmail(u)}</td>
-                    <td className="p-3">
-                      {/* Role change only for Super Admin */}
-                      {isSuperAdmin ? (
-                        <Select value={u.role} onValueChange={(v) => v && setRole(u._id, v)}>
-                          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {ROLES.map((r) => (
-                              <SelectItem key={r} value={r}>{r}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs">
-                          <Shield className="h-3 w-3" /> {u.role}
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <Select value={u.status} onValueChange={(v) => v && setStatus(u._id, v)}>
-                        <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {STATUSES.map((s) => (
-                            <SelectItem key={s} value={s}>{s}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="p-3 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => setConfirmBan(u._id)}>
-                        <Ban className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(u._id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Users</h1>
+        <Link to="/admin/users/new">
+          <Button>+ Add User</Button>
+        </Link>
       </div>
 
-      <ConfirmDialog
-        open={!!confirmBan}
-        onOpenChange={(o) => !o && !processing && setConfirmBan(null)}
-        title="Ban this user?"
-        description="They will be blocked from logging in."
-        onConfirm={handleBan}
-        loading={processing}
-      />
-      <ConfirmDialog
-        open={!!confirmDelete}
-        onOpenChange={(o) => !o && !processing && setConfirmDelete(null)}
-        title="Delete this user?"
-        description="This is a soft delete."
-        onConfirm={handleDelete}
-        loading={processing}
-      />
-      <AlertModal
-        open={alert.open}
-        onOpenChange={(o) => !o && hide()}
-        variant={alert.variant}
-        title={alert.title}
-        description={alert.description}
-        confirmText="Got it"
-      />
-    </>
+      {/* Stats */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">Total</p>
+              <p className="text-2xl font-bold">{stats.total}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">Active</p>
+              <p className="text-2xl font-bold">
+                {stats.byStatus?.active ?? 0}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">Blocked</p>
+              <p className="text-2xl font-bold">
+                {stats.byStatus?.blocked ?? 0}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">New This Month</p>
+              <p className="text-2xl font-bold">{stats.newThisMonth}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2">
+        <Input
+          placeholder="Search by name or email..."
+          className="max-w-xs"
+          onChange={(e) =>
+            setQuery((q) => ({ ...q, search: e.target.value, page: 1 }))
+          }
+        />
+        <select
+          className="border rounded px-3 py-2"
+          onChange={(e) =>
+            setQuery((q) => ({
+              ...q,
+              role: (e.target.value as Role) || undefined,
+              page: 1,
+            }))
+          }
+        >
+          <option value="">All Roles</option>
+          {Object.values(Role).map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        <select
+          className="border rounded px-3 py-2"
+          onChange={(e) =>
+            setQuery((q) => ({
+              ...q,
+              status: (e.target.value as UserStatus) || undefined,
+              page: 1,
+            }))
+          }
+        >
+          <option value="">All Status</option>
+          {Object.values(UserStatus).map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Table */}
+      {isLoading ? (
+        <Skeleton className="h-96 w-full" />
+      ) : (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Verified</TableHead>
+                <TableHead>Joined</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data?.data.map((u: any) => (
+                <TableRow key={u._id}>
+                  <TableCell>
+                    <div className="font-medium">
+                      {u.fullName ||
+                        u.name ||
+                        `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() ||
+                        "—"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {u.email}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className="capitalize">{u.role}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={u.isDeleted ? "destructive" : "outline"}>
+                      {u.isDeleted ? "deleted" : u.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{u.emailVerified ? "✅" : "—"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {u.createdAt
+                      ? new Date(u.createdAt).toLocaleDateString()
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="text-right space-x-1">
+                    <Link to={`/admin/users/${u._id}`}>
+                      <Button size="sm" variant="ghost">
+                        View
+                      </Button>
+                    </Link>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => banUser.mutate(u._id)}
+                      disabled={u.status === UserStatus.BLOCKED}
+                    >
+                      Ban
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        if (confirm("Delete this user?"))
+                          deleteUser.mutate(u._id);
+                      }}
+                      disabled={u.isDeleted}
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+
+      {/* Pagination */}
+      {data?.pagination && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Page {data.pagination.page} of {data.pagination.totalPages} ·{" "}
+            {data.pagination.total} users
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!data.pagination.hasPrevPage}
+              onClick={() =>
+                setQuery((q) => ({ ...q, page: (q.page ?? 1) - 1 }))
+              }
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!data.pagination.hasNextPage}
+              onClick={() =>
+                setQuery((q) => ({ ...q, page: (q.page ?? 1) + 1 }))
+              }
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,28 +1,38 @@
-import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { authService } from '../services/auth.service';
 import { useAuthStore } from '../store/auth.store';
 import { RegisterForm } from '../models/auth.model';
 
 export function useRegister() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const setUser = useAuthStore((s) => s.setUser);
+  const setAccessToken = useAuthStore((s) => s.setAccessToken);
+  const [error, setError] = useState<string | null>(null);
 
-  const register = async (data: RegisterForm) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { user, accessToken } = await authService.register(data);
-      setAuth(user, accessToken);
+  const mutation = useMutation({
+    mutationFn: (data: RegisterForm) => authService.register(data),
+    onMutate: () => setError(null),
+    onSuccess: (data) => {
+      setUser(data.user);
+      setAccessToken(data.accessToken);
       navigate('/');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onError: (err: any) => {
+      const res = err?.response?.data;
+      // Backend validation errors
+      if (Array.isArray(res?.errors) && res.errors.length > 0) {
+        setError(res.errors.map((e: any) => e.message).join(', '));
+      } else {
+        setError(res?.message || 'Registration failed. Please try again.');
+      }
+    },
+  });
 
-  return { register, loading, error };
+  return {
+    register: mutation.mutate,
+    loading: mutation.isPending,
+    error,
+  };
 }
